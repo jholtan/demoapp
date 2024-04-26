@@ -47,6 +47,8 @@ jobs:
       - name: Login to GHCR
         run: |
           echo $GITHUB_TOKEN | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
       - name: Build image
         run: |
           docker build --build-arg JAR_FILE=target/*.jar -t local-app .
