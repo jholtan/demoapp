@@ -52,7 +52,7 @@ jobs:
       - name: Build image
         run: |
           docker build --build-arg JAR_FILE=target/*.jar -t local-app .
-          docker tag local-app ${{ env.registry }}/${{ env.image_name }}
-          docker push ${{ env.registry }}/${{ env.image_name }}
+          docker tag local-app ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
 
 
