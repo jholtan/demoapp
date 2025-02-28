@@ -7,3 +7,7 @@ on:
 jobs:
   build-and-deploy:
     uses: jholtan/demoapp/.github/workflows/deploy.yaml@master
+    permissions:
+      id-token: write
+      packages: write
+      attestations: write
