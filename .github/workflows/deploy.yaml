@@ -42,11 +42,18 @@ jobs:
           subject-digest: ${{ steps.build_image.outputs.digest }}
           push-to-registry: true
 
-  #  assemble-image:
-  #  runs-on: ubuntu-latest
+  deploy-stage:
+    needs: ["build-source"]
+    runs-on: ubuntu-latest
+    environment: stage
+    steps:
+      - name: Deploy to stage
+        run: echo "Deploying to Stage"
 
-  #  deploy-stage:
-  #  runs-on: ubuntu-latest
-
-  #  deploy-prod:
-  #  runs-on: ubuntu-latest
+  deploy-prod:
+    needs: ["build-source", "deploy-stage"]
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Deploy to production
+        run: echo "Deploying to Production"
