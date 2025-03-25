@@ -1,7 +1,12 @@
 name: Build and Deploy
 
 on:
-  workflow_call:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+  repository_dispatch:
+    types: [argocd-sync-succeeded]
 
 env:
   REGISTRY: ghcr.io
@@ -43,17 +48,37 @@ jobs:
           push-to-registry: true
 
   deploy-stage:
-    needs: ["build-source"]
+    needs: build-source
     runs-on: ubuntu-latest
     environment: stage
     steps:
       - name: Deploy to stage
         run: echo "Deploying to Stage"
+      - name: Update GitOps repository
+        run: echo "Producing a new commit in GitOps repository"
+
+  wait-for-stage:
+    needs: deploy-stage
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for ArgoCD sync
+        run: echo "Waiting for ArgoCD to be synced and healthy"
+    timeout-minutes: 15
 
   deploy-prod:
-    needs: ["build-source", "deploy-stage"]
+    needs: wait-for-stage
     runs-on: ubuntu-latest
     environment: production
     steps:
       - name: Deploy to production
         run: echo "Deploying to Production"
+      - name: Update GitOps repository
+        run: echo "Producing a new commit in GitOps repository"
+
+  wait-for-prod:
+    needs: deploy-prod
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for ArgoCD sync
+        run: echo "Waiting for ArgoCD to be synced and healthy"
+    timeout-minutes: 15
