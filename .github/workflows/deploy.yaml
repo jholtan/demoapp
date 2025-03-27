@@ -54,6 +54,7 @@ jobs:
 
   deploy-stage:
     needs: build-source
+    if: github.repostitory == 'jholtan/not-this-one'
     runs-on: ubuntu-latest
     environment: stage
     steps:
