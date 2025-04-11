@@ -43,6 +43,17 @@
 			<artifactId>kotlin-stdlib</artifactId>
 		</dependency>
 
+    <dependency>
+      <groupId>dev.openfeature</groupId>
+      <artifactId>sdk</artifactId>
+      <version>1.14.2</version>
+    </dependency>
+    <dependency>
+      <groupId>dev.openfeature.contrib.providers</groupId>
+      <artifactId>go-feature-flag</artifactId>
+      <version>0.4.3</version>
+    </dependency>
+
 		<dependency>
 			<groupId>com.h2database</groupId>
 			<artifactId>h2</artifactId>

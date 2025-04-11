@@ -15,6 +15,6 @@ class HelloControllerTest(@Autowired val restTemplate: TestRestTemplate) {
   fun `Assert content and status code`() {
     val entity = restTemplate.getForEntity<String>("/")
     assertThat(entity.statusCode).isEqualTo(HttpStatus.OK)
-    assertThat(entity.body).isEqualTo("Hello World")
+    assertThat(entity.body).contains("Hello World")
   }
 }

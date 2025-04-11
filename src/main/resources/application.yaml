@@ -1,2 +1,6 @@
-
 spring.main.banner-mode: off
+
+management:
+  endpoints:
+    health:
+      show-details: always
