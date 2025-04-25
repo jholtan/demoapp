@@ -1,12 +1,11 @@
 name: Build and Deploy
 
 on:
-  push:
-    branches:
-      - master
-  workflow_dispatch:
-  repository_dispatch:
-    types: [argocd-sync-succeeded]
+  workflow_call:
+    outputs:
+      digest:
+        description: The digest of the built image
+        value: ${{ steps.build_image.outputs.digest }}
 
 permissions:
   id-token: write

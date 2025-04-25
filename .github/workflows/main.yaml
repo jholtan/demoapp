@@ -2,7 +2,7 @@ name: Build and Deploy
 
 on:
   push:
-    branches: ["nada"]
+    branches: ["master"]
 
 jobs:
   build-and-deploy:
