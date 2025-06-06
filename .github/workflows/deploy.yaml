@@ -36,6 +36,7 @@ jobs:
         uses: docker/metadata-action@902fa8ec7d6ecbf8d84d538b9b233a880e428804
         with:
           images: ghcr.io/jholtan/demoapp
+
       - name: Build and push image
         uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4
         id: build_image
@@ -44,46 +45,18 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+      - name: Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ${{ steps.build_image.outputs.imageid }}
+          format: table
+          exit-code: "1"
+          ignore-unfixed: true
+          vuln-type: "os,library"
+          severity: "CRITICAL,HIGH"
       - name: Generate attestation
         uses: actions/attest-build-provenance@v2.2.2
         with:
           subject-name: ghcr.io/jholtan/demoapp
           subject-digest: ${{ steps.build_image.outputs.digest }}
           push-to-registry: true
-
-  deploy-stage:
-    needs: build-source
-    if: github.repostitory == 'jholtan/not-this-one'
-    runs-on: ubuntu-latest
-    environment: stage
-    steps:
-      - name: Deploy to stage
-        run: echo "Deploying to Stage"
-      - name: Update GitOps repository
-        run: echo "Producing a new commit in GitOps repository"
-
-  wait-for-stage:
-    needs: deploy-stage
-    runs-on: ubuntu-latest
-    steps:
-      - name: Wait for ArgoCD sync
-        run: echo "Waiting for ArgoCD to be synced and healthy"
-    timeout-minutes: 15
-
-  deploy-prod:
-    needs: wait-for-stage
-    runs-on: ubuntu-latest
-    environment: production
-    steps:
-      - name: Deploy to production
-        run: echo "Deploying to Production"
-      - name: Update GitOps repository
-        run: echo "Producing a new commit in GitOps repository"
-
-  wait-for-prod:
-    needs: deploy-prod
-    runs-on: ubuntu-latest
-    steps:
-      - name: Wait for ArgoCD sync
-        run: echo "Waiting for ArgoCD to be synced and healthy"
-    timeout-minutes: 15
