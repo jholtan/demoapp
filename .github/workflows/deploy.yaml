@@ -1,11 +1,8 @@
 name: Build and Deploy
 
 on:
-  workflow_call:
-    outputs:
-      digest:
-        description: The digest of the built image
-        value: ${{ steps.build_image.outputs.digest }}
+  push:
+    branches: [master]
 
 permissions:
   id-token: write
