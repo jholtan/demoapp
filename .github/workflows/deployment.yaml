@@ -1,0 +1,125 @@
+name: Update image in config repo
+
+run-name: Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      image-name:
+        description: "The name of the image to deploy"
+        required: true
+      image-digest:
+        description: "The digest of the image to deploy"
+        required: true
+      sha:
+        description: "The commit SHA the image is built from"
+        required: false
+      config-repository:
+        description: "ArgoCD config repository"
+        required: true
+      application:
+        description: "Application name"
+        required: true
+      deploy-to-environment:
+        description: "Name of the environment to deploy to"
+        required: true
+      deploy-to-environments:
+        description: "A comma separated list of environments to deploy to"
+        required: false
+      triggering-actor:
+        description: "Name of the actor that trigger the deployment workflow"
+        required: false
+      created-at:
+        description: "Timestamp of the creation of the workflow run"
+        required: true
+
+env:
+  IMAGE_NAME: ${{ inputs.image-name }}
+  IMAGE_DIGEST: ${{ inputs.image-digest }}
+  COMMIT_SHA: ${{ inputs.sha }}
+  CONFIG_REPOSITORY: ${{ inputs.config-repository }}
+  APPLICATION_NAME: ${{ inputs.application }}
+  TRIGGERING_ACTOR: ${{ inputs.triggering-actor }}
+  CREATED_AT: ${{ inputs.created-at }}
+
+jobs:
+  update-digest:
+    concurrency: ${{ inputs.config-repository }}
+    timeout-minutes: 2
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+      attestations: read
+      packages: read
+    steps:
+      - name: Startup
+        run: |
+          echo "Start workflow for ${APPLICATION_NAME}"
+          if (( $(date +%s%3N) - $CREATED_AT > 86400000 )); then
+            echo "::error::Skipping deployment because the workflow run is older than 24 hours"
+            exit 1
+          fi
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Create GitHub App Token
+        id: create_token
+        uses: actions/github-app-token@v2.0.6
+        with:
+          app_id: ${{ vars.DEPLOYMENT_APP_ID }}
+          private_key: ${{ secrets.DEPLOYMENT_PRIVATE_KEY }}
+
+      - name: Checkout ArgoCD config repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/${{ inputs.config-repository }}
+          token: ${{ steps.create_token.outputs.token }}
+          persist-credentials: true
+
+      - name: Update digests
+        working-directory: ${{ env_APPLICATION_NAME }}/overlays
+        run: |
+          cleaned_input="${DEPLOY_ENVS// /}"
+          IFS=',' read -ra environment_list <<< "$cleaned_input"
+
+          git config --global user.name "deployment[bot]"
+          git config --global user.email "deployment[bot]@users.noreply.github.com"
+
+          for ENV in "${environment_list[@]}"; do
+            echo "Deploying to $ENV..."
+            
+            if [[ "$ENV" == "prod" ]]; then
+              repo_ref=$(gh attestations verify oci://${IMAGE_NAME}@${IMAGE_DIGEST} -o ${{ github.repository_owner }} --format json --predicate-type https://slsa.dev/provenance/v1 -q '.[0].verificationResult.signature.certificate.sourceRepositoryRef')
+              if [[ "$repo_ref" != "refs/heads/main" ]]; then
+                echo "::error::The image $IMAGE_NAME@$IMAGE_DIGEST is not built from the main branch. Deployment to production is not allowed."
+                exit 1
+              fi
+            fi
+
+            pushd "${ENV}"
+
+            if yq -e ".images[] | select(.name == \"${IMAGE_NAME}\")" kustomization.yaml >/dev/null 2>&1; then
+              kustomize edit set image ${IMAGE_NAME}=*@${IMAGE_DIGEST}
+            else
+              echo "::error::Image ${IMAGE_NAME} not found in kustomization.yaml"
+              exit 1
+            fi
+
+            git add -A
+
+            if ! git diff --cached --quiet; then
+              git commit -m "Update image ${IMAGE_NAME} to ${IMAGE_DIGEST} for environment ${ENV}"
+              git push
+              echo "Image updated and pushed for environment ${ENV}"
+            else
+              echo "No changes to commit for environment ${ENV}"
+            fi
+
+            popd
+          done
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DEPLOY_ENVS: ${{ inputs.deploy-to-environments }}
