@@ -27,7 +27,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: ["java-kotlin", "Github Actions"]
+        language: ["java-kotlin", "actions"]
 
     steps:
       - name: Checkout
@@ -42,10 +42,15 @@ jobs:
 
       - name: Initialize Java
         uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4.7.1
+        if: ${{ matrix.language == 'java-kotlin' }}
         with:
           distribution: "temurin"
           java-version-file: ".java-version"
           cache: "maven"
+
+      - name: Build
+        if: ${{ matrix.language == 'java-kotlin' }}
+        run: ./mvnw package -DskipTests
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@ff0a06e83cb2de871e5a09832bc6a81e7276941f # v3.28.18
