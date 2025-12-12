@@ -3,13 +3,13 @@ WORKDIR /build
 COPY . .
 RUN mvn clean install -DskipTests
 
-FROM eclipse-temurin:21-jre-alpine-3.22@sha256:326837fba06a8ff5482a17bafbd65319e64a6e997febb7c85ebe7e3f73c12b11 AS layer
+FROM eclipse-temurin:21-jre@sha256:b0f6befb3f2af49704998c4425cb6313c1da505648a8e78cee731531996f735d
 WORKDIR /layer
 ADD https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/v2.14.0/opentelemetry-javaagent.jar .
 COPY --from=builder /build/target/*.jar app.jar
 RUN java -Djarmode=layertools -jar app.jar extract
 
-FROM eclipse-temurin:21-jre-alpine-3.22@sha256:326837fba06a8ff5482a17bafbd65319e64a6e997febb7c85ebe7e3f73c12b11
+FROM eclipse-temurin:21-jre@sha256:b0f6befb3f2af49704998c4425cb6313c1da505648a8e78cee731531996f735d
 WORKDIR /app
 RUN addgroup -S appuser && adduser -S -s /usr/sbin/nologin -G appuser appuser
 COPY --from=layer /layer/opentelemetry-javaagent.jar ./
