@@ -11,7 +11,7 @@ RUN java -Djarmode=layertools -jar app.jar extract
 
 FROM eclipse-temurin:21-jre@sha256:b0f6befb3f2af49704998c4425cb6313c1da505648a8e78cee731531996f735d
 WORKDIR /app
-RUN addgroup -S appuser && adduser -S -s /usr/sbin/nologin -G appuser appuser
+RUN addgroup --system appuser && adduser --system --shell /usr/sbin/nologin --ingroup appuser appuser
 COPY --from=layer /layer/opentelemetry-javaagent.jar ./
 COPY --from=layer /layer/dependencies/ ./
 COPY --from=layer /layer/spring-boot-loader/ ./
