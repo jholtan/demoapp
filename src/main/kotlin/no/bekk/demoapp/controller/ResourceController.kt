@@ -58,7 +58,7 @@ class ResourceController {
     }
 
     val updatedResource = resource.copy(id = id).apply {
-      markUpdated(jwt.subject)
+      markUpdated(jwt.subject ?: "")
     }
     resources[id] = updatedResource
 
