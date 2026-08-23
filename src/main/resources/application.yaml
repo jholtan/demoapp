@@ -1,4 +1,15 @@
-spring.main.banner-mode: off
+spring:
+  application:
+    name: demoapp
+  main:
+    banner-mode: off
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8080
+server:
+  port: 8081
 
 management:
   endpoints:
