@@ -21,7 +21,7 @@ class ZitadelJwtAuthenticationConverter: Converter<Jwt, AbstractAuthenticationTo
   }
 
   private fun extractPrincipalName(jwt: Jwt): String {
-    return jwt.getClaimAsString("preferred_username") ?: jwt.subject
+    return jwt.getClaimAsString("preferred_username") ?: jwt.subject ?: ""
   }
 
   private fun extractAuthorities(jwt: Jwt): Collection<GrantedAuthority> {
